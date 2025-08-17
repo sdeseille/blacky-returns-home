@@ -10,3 +10,8 @@ var GROUND_Y = Math.floor(canvas.height * 0.7); // same pos everywhere
 var DETECT_R = 110;   // Radius to detect player (IA switch to chase mode)
 var ATTACK_R = 46;    // attack radius (crouch -> dash)
 
+  // ------------ functions toolbox ------------
+  function clamp(v, a, b){ return v < a ? a : v > b ? b : v; }
+  function dist(a,b){ var dx=a.x-b.x, dy=a.y-b.y; return Math.hypot(dx,dy); }
+
+  
