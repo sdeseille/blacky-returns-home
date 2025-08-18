@@ -82,21 +82,56 @@ function createCat(opts){
 
     update: function(){
       this.t += 0.1;
+      if (this.ai){
+        // --- IA : idle -> chase -> crouch -> dash ---
+        var D = dist(this, player);
+        var dx = player.x - this.x, dy = player.y - this.y;
+        var nx = D ? dx/D : 0, ny = D ? dy/D : 0;
 
-      // --- Player ---
-      let l = kontra.keyPressed('arrowleft'),
-          r = kontra.keyPressed('arrowright'),
-          up = kontra.keyPressed('space') || kontra.keyPressed('arrowup'),
-          dash = kontra.keyPressed('shift');
+        if (this.state === 'idle'){
+          // light patrol
+          if (Math.random() < 0.02) this.vx = (Math.random() - 0.5) * (this.speed*0.8);
+          if (D < DETECT_R) this.state = 'chase';
+        }
+        else if (this.state === 'chase'){
+          this.vx = nx * this.speed * 1.3;
+          if (D < ATTACK_R){
+            this.state = 'crouch';
+            this.crouchT = 20; // frames to curl up in
+            this.vx = 0;
+          }
+        }
+        else if (this.state === 'crouch'){
+          this.vx = 0;
+          this.crouchT--;
+          if (this.crouchT <= 0){
+            this.state = 'dash';
+            this.vx = nx * this.speed * 4.0; // aggressive jump
+          }
+        }
+        else if (this.state === 'dash'){
+          // short dash, then return to idle/chase
+          this.vx *= 0.96;
+          if (Math.abs(this.vx) < 0.2) this.state = (D < DETECT_R ? 'chase' : 'idle');
+        }
 
-      this.vx = (l ? -this.speed : 0) + (r ? this.speed : 0);
-      if (this.onGround && up){ this.vy = JUMP; this.onGround = false; }
-      if (this.onGround && dash && !this.sliding){ this.sliding = 18; }
-      if (this.sliding){
-        this.vx += (this.facing = (this.vx>=0?1:-1)) * 3.5;
-        this.sliding--;
+        this.facing = this.vx === 0 ? this.facing : (this.vx > 0 ? 1 : -1);
       }
+      else {
+        // --- Player ---
+        let l = kontra.keyPressed('arrowleft'),
+            r = kontra.keyPressed('arrowright'),
+            up = kontra.keyPressed('space') || kontra.keyPressed('arrowup'),
+            dash = kontra.keyPressed('shift');
 
+        this.vx = (l ? -this.speed : 0) + (r ? this.speed : 0);
+        if (this.onGround && up){ this.vy = JUMP; this.onGround = false; }
+        if (this.onGround && dash && !this.sliding){ this.sliding = 18; }
+        if (this.sliding){
+          this.vx += (this.facing = (this.vx>=0?1:-1)) * 3.5;
+          this.sliding--;
+        }
+      }
       // Gravity management
       this.vy += GRAV;
       this.x += this.vx;
@@ -114,18 +149,32 @@ function createCat(opts){
       // Border
       this.x = clamp(this.x, 32, canvas.width - 4);
     },
-  render: function(){
-      renderCat(this);
+    render: function(){
+      // If AI is in “crouch” mode, draw a ball — otherwise draw a normal cat.
+      var c = this.context;
+      if (this.ai && this.state === 'crouch'){
+        c.fillStyle = 'black';
+        //c.beginPath(); c.arc(0, 6, 10, 0, Math.PI*2); c.fill();
+        c.beginPath(); c.ellipse(0, 6, 15, 10, 0, 0, Math.PI*2); c.fill();
+      } else {
+        renderCat(this);
+      }
     }
   });
   return s;
 }
 
-player = createCat({ x: 60, y: GROUND_Y, speed: 2.2, ai: false });
+let player = createCat({ x: 60, y: GROUND_Y, speed: 2.2, ai: false });
+let cats = [
+  player,
+  createCat({ x: 210, y: GROUND_Y, speed: 1.2, vx:  0.8, ai: true }),
+  createCat({ x: 320, y: GROUND_Y, speed: 1.6, vx: -1.2, ai: true }),
+  createCat({ x: 140, y: GROUND_Y, speed: 1.0, vx:  0.4, ai: true })
+];
 
 let loop = GameLoop({  // create the main game loop
   update: function() { // update the game state
-    player.update()
+    for (let i=0;i<cats.length;i++) cats[i].update();
   },
   render: function() { // render the game state
     // background + ground (drawed on CANVAS context, excluded sprites)
@@ -133,7 +182,7 @@ let loop = GameLoop({  // create the main game loop
     context.fillStyle = '#eaeaea';
     context.fillRect(0, GROUND_Y + 4, canvas.width, 2);
     // sprites
-    player.render()
+    for (let i=0;i<cats.length;i++) cats[i].render();
   }
 });
 
