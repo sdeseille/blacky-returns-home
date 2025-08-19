@@ -1,7 +1,6 @@
-let { init, Sprite, Text, Grid, GameLoop, track, initPointer, initKeys, onKey, Button } = kontra;
+let { init, TileEngine, Sprite, GameLoop, initKeys, keyPressed } = kontra;
 
-let { canvas, context } = init();
-initPointer();
+const { canvas } = init();
 initKeys();
 
 // ------------ CONSTANT ------------
@@ -13,6 +12,118 @@ const ATTACK_R = 46;    // attack radius (crouch -> dash)
 // ------------ functions toolbox ------------
 function clamp(v, a, b){ return v < a ? a : v > b ? b : v; }
 function dist(a,b){ let dx=a.x-b.x, dy=a.y-b.y; return Math.hypot(dx,dy); }
+
+// --- virtual Tileset : grey square 36x36 ---
+const TW = 36, TH = 36, MAPW = 25, MAPH = 10;
+function makeTile(color = '#999') {
+  const img = document.createElement('canvas');
+  img.width = TW; img.height = TH;
+  const ctx = img.getContext('2d');
+  ctx.fillStyle = color; ctx.fillRect(0, 0, TW, TH);
+  ctx.strokeStyle = '#777'; ctx.strokeRect(0, 0, TW, TH);
+  return img;
+}
+const tileImage = makeTile('#9aa'); // init tile image
+
+// --- data of the map : 0 = empty, 1 = filled ---
+const data = new Array(MAPW * MAPH).fill(0);
+// ground (last line)
+for (let c = 0; c < MAPW; c++) data[(MAPH - 1) * MAPW + c] = 1;
+
+// floating platform (line 5, columns 11..15)
+for (let c = 11; c <= 15; c++) data[5 * MAPW + c] = 1;
+
+// floating plateform (line 7, columns 6..9)
+for (let c = 6; c <= 9; c++) data[7 * MAPW + c] = 1;
+
+// --- TileEngine Création (require image !) ---
+const tileEngine = TileEngine({
+  tilewidth: TW,
+  tileheight: TH,
+  width: MAPW,
+  height: MAPH,
+  tilesets: [{ firstgid: 1, image: tileImage, columns: 1 }],
+  layers: [{
+    name: 'solid',
+    data // CSV flatten (1D array)
+  }]
+});
+
+// --- Collisions detection with tiles---
+function isSolidAt(x, y) {
+  return tileEngine.tileAtLayer('solid', { x, y }) > 0; // 0 = vide
+}
+
+function collideWithTiles(e) {
+  // 1) Vertical integration with vy
+  e.vy += GRAV;
+  e.y += e.vy;
+
+  const halfW = e.width / 2, halfH = e.height / 2;
+
+  if (e.vy >= 0) {
+    // fall : sample just below the feet (+1) to avoid sinking
+    const bottom = e.y + halfH + 1;
+    const left = e.x - halfW + 2, right = e.x + halfW - 2;
+    if (isSolidAt(left, bottom) || isSolidAt(right, bottom)) {
+      const row = Math.floor(bottom / TH);
+      e.y = row * TH - halfH - 4;   // place it right on top of the tile
+      e.vy = 0;
+      e.onGround = true;
+    } else {
+      e.onGround = false;
+    }
+  } else {
+    // climb : sample just above the head (-1)
+    const top = e.y - halfH - 1;
+    const left = e.x - halfW + 2, right = e.x + halfW - 2;
+    if (isSolidAt(left, top) || isSolidAt(right, top)) {
+      const row = Math.floor(top / TH);
+      e.y = (row + 1) * TH + halfH; // hit the underside of a tile
+      e.vy = 0;
+    }
+  }
+
+  // 2) Horizontal integration with vx
+  e.x += e.vx;
+
+  if (e.vx > 0) {
+    const right = e.x + halfW;
+    const top = e.y - halfH + 2, bottom = e.y + halfH - 2;
+    if (isSolidAt(right, top) || isSolidAt(right, bottom)) {
+      const col = Math.floor(right / TW);
+      e.x = col * TW - halfW; // stick to the left edge of the tile
+      e.vx = 0;
+    }
+  } else if (e.vx < 0) {
+    const left = e.x - halfW;
+    const top = e.y - halfH + 2, bottom = e.y + halfH - 2;
+    if (isSolidAt(left, top) || isSolidAt(left, bottom)) {
+      const col = Math.floor(left / TW);
+      e.x = (col + 1) * TW + halfW; // stick to the right edge of the tile
+      e.vx = 0;
+    }
+  }
+}
+
+// --- utility to find Y of the shadow ---
+function getShadowY(e, tileEngine) {
+  let startY = e.y + e.height / 2;        // bottom of the sprite
+  let col = Math.floor(e.x / tileEngine.tilewidth);
+  let row = Math.floor(startY / tileEngine.tileheight);
+
+  const cols = tileEngine.width;           // width in tiles
+  const rows = tileEngine.height;          // height in tiles
+
+  for (let r = row; r < rows; r++) {
+    let tile = tileEngine.layers[0].data[r * cols + col];
+    if (tile) {
+      tileY = r * tileEngine.tileheight;
+      return tileY; // Y from the top of the tile
+    }
+  }
+  return null;
+}
 
 // ------------ Render the cat (locally, centered anchor) ------------
 function renderCat(self){
@@ -52,8 +163,12 @@ function renderCat(self){
 
   // Shadow if in the air
   if (!self.onGround){
-    c.fillStyle = 'rgba(0,0,0,0.15)';
-    c.fillRect(-8, (GROUND_Y - self.y) + 20, 16, 3);
+    let shadowY = getShadowY(self, tileEngine);
+    if (shadowY !== null) {
+
+      c.fillStyle = 'rgba(0, 0, 0, 0.3)';
+      c.fillRect(-8, (shadowY - self.y), 16, 3,);
+    }
   }
 }
 
@@ -65,7 +180,9 @@ function createCat(opts){
     y: o.y || GROUND_Y,
     width: 32,
     height: 32,
-    anchor: {x:0.5, y:0.5},
+    furColor: o.furColor,
+    eyeColor: o.eyeColor,
+    //anchor: {x:0.5, y:0.5},
 
     // state and physics.
     vx: o.vx || 0,
@@ -82,15 +199,18 @@ function createCat(opts){
 
     update: function(){
       this.t += 0.1;
+
       if (this.ai){
         // --- IA : idle -> chase -> crouch -> dash ---
-        var D = dist(this, player);
-        var dx = player.x - this.x, dy = player.y - this.y;
-        var nx = D ? dx/D : 0, ny = D ? dy/D : 0;
+        let D = dist(this, player);
+        let dx = player.x - this.x, dy = player.y - this.y;
+        let nx = D ? dx/D : 0, ny = D ? dy/D : 0;
 
         if (this.state === 'idle'){
           // light patrol
           if (Math.random() < 0.02) this.vx = (Math.random() - 0.5) * (this.speed*0.8);
+          // Jump sometime
+          if (this.onGround && Math.random() < 0.005) { this.vy = JUMP; this.onGround = false; }
           if (D < DETECT_R) this.state = 'chase';
         }
         else if (this.state === 'chase'){
@@ -132,29 +252,17 @@ function createCat(opts){
           this.sliding--;
         }
       }
-      // Gravity management
-      this.vy += GRAV;
-      this.x += this.vx;
-      this.y += this.vy;
-
-      // Ground collision
-      if (this.y > GROUND_Y){
-        this.y = GROUND_Y;
-        this.vy = 0;
-        this.onGround = true;
-      } else {
-        this.onGround = false;
-      }
+      // input
+      collideWithTiles(this);
 
       // Border
       this.x = clamp(this.x, 32, canvas.width - 4);
     },
     render: function(){
       // If AI is in “crouch” mode, draw a ball — otherwise draw a normal cat.
-      var c = this.context;
+      let c = this.context;
       if (this.ai && this.state === 'crouch'){
-        c.fillStyle = 'black';
-        //c.beginPath(); c.arc(0, 6, 10, 0, Math.PI*2); c.fill();
+        c.fillStyle = this.furColor;
         c.beginPath(); c.ellipse(0, 6, 15, 10, 0, 0, Math.PI*2); c.fill();
       } else {
         renderCat(this);
@@ -165,22 +273,21 @@ function createCat(opts){
 }
 
 let player = createCat({ x: 60, y: GROUND_Y, speed: 2.2, ai: false });
+
 let cats = [
   player,
-  createCat({ x: 210, y: GROUND_Y, speed: 1.2, vx:  0.8, ai: true }),
-  createCat({ x: 320, y: GROUND_Y, speed: 1.6, vx: -1.2, ai: true }),
+  createCat({ x: 210, y: GROUND_Y, speed: 1.2, vx:  0.8, ai: true, furColor: 'white', eyeColor: 'blue' }),
+  createCat({ x: 180, y: GROUND_Y, speed: 1.6, vx: -1.2, ai: true, furColor: 'orange', eyeColor: 'green' }),
   createCat({ x: 140, y: GROUND_Y, speed: 1.0, vx:  0.4, ai: true })
 ];
 
+// --- Main Loop ---
 let loop = GameLoop({  // create the main game loop
   update: function() { // update the game state
     for (let i=0;i<cats.length;i++) cats[i].update();
   },
   render: function() { // render the game state
-    // background + ground (drawed on CANVAS context, excluded sprites)
-    context.clearRect(0,0,canvas.width,canvas.height);
-    context.fillStyle = '#eaeaea';
-    context.fillRect(0, GROUND_Y + 4, canvas.width, 2);
+    tileEngine.render();
     // sprites
     for (let i=0;i<cats.length;i++) cats[i].render();
   }
