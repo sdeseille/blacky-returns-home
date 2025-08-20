@@ -56,7 +56,6 @@ function isSolidAt(x, y) {
 
 function collideWithTiles(e) {
   // 1) Vertical integration with vy
-  e.vy += GRAV;
   e.y += e.vy;
 
   const halfW = e.width / 2, halfH = e.height / 2;
@@ -195,10 +194,12 @@ function createCat(opts){
     facing: 1,
     t: 0,
     blink: 0,
-    onGround: true,
+    onGround: false,
+    reboundCooldown: 0,
 
     update: function(){
       this.t += 0.1;
+      this.vy += GRAV;
 
       if (this.ai){
         // --- IA : idle -> chase -> crouch -> dash ---
@@ -239,6 +240,26 @@ function createCat(opts){
       }
       else {
         // --- Player ---
+
+        // --- Cooldown rebond ---
+        if (this.reboundCooldown > 0) {
+          this.reboundCooldown--;  // decrement each frame
+        }
+
+        // if the player is rebounding, the keyboard is not taken into account
+        if (player.reboundCooldown > 0) {
+          this.x += this.vx;
+          this.y += this.vy;
+          this.vy += GRAV; // continuous gravity
+
+          // duplicate the function call to not go out of area
+          collideWithTiles(this);
+
+          // duplicate the function call to not go out of area
+          this.x = clamp(this.x, 32, canvas.width - 4);
+          return;
+        }
+
         let l = kontra.keyPressed('arrowleft'),
             r = kontra.keyPressed('arrowright'),
             up = kontra.keyPressed('space') || kontra.keyPressed('arrowup'),
@@ -275,20 +296,42 @@ function createCat(opts){
 let player = createCat({ x: 60, y: GROUND_Y, speed: 2.2, ai: false });
 
 let cats = [
-  player,
   createCat({ x: 210, y: GROUND_Y, speed: 1.2, vx:  0.8, ai: true, furColor: 'white', eyeColor: 'blue' }),
   createCat({ x: 180, y: GROUND_Y, speed: 1.6, vx: -1.2, ai: true, furColor: 'orange', eyeColor: 'green' }),
   createCat({ x: 140, y: GROUND_Y, speed: 1.0, vx:  0.4, ai: true })
 ];
 
+// --- Manage collision between player and AI ---
+function collidePlayerCats(player, cats) {
+  cats.forEach(cat => {
+    if (kontra.collides(player, cat)) {
+      // To not go in infinite loop
+      if ( player.onGround && player.reboundCooldown === 0) {
+         // Rebound direction
+         let dx = player.x - cat.x;
+         player.vx = dx > 0 ? 4 : -4;
+         player.vy = -8;
+  
+        // cooldown to avoid infinite rebound
+        player.reboundCooldown = 20;
+
+        console.log("Rebound trigered !");
+      }
+    }
+  });
+}
+
 // --- Main Loop ---
 let loop = GameLoop({  // create the main game loop
   update: function() { // update the game state
+    player.update();
     for (let i=0;i<cats.length;i++) cats[i].update();
+    collidePlayerCats(player,cats);
   },
   render: function() { // render the game state
     tileEngine.render();
     // sprites
+    player.render();
     for (let i=0;i<cats.length;i++) cats[i].render();
   }
 });
