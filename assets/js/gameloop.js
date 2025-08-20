@@ -140,7 +140,13 @@ function renderCat(self){
   // Tail (oscillates more strongly if moving horizontally)
   let walkAmp = Math.min(Math.abs(self.vx || 0), 3) * 1.2 + 2;
   let tailOffset = Math.sin(self.t * 1.6) * walkAmp;
-  c.fillRect(10, -6 + tailOffset, 4, 14);
+  if (!self.ai){
+    c.fillRect(10, -4 + tailOffset, 4, 8);
+    c.fillRect(14, -6 + tailOffset, 4, 5);  
+  } else {
+    c.fillRect(10, -6 + tailOffset, 4, 14);
+  }
+  
 
   // Legs (no movement during sliding)
   let step = self.sliding ? 0 : Math.sin(self.t * 3) * 2;
