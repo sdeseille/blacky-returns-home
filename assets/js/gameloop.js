@@ -161,7 +161,7 @@ function renderFishSkeleton(c){
 
   // Spine
   c.beginPath();
-  c.moveTo(-12,0); c.lineTo(12,0); c.stroke();
+  c.moveTo(-12,0); c.lineTo(10,0); c.stroke();
 
   // fish head (triangle)
   c.beginPath();
@@ -170,14 +170,14 @@ function renderFishSkeleton(c){
 
   // Fish tail (V)
   c.beginPath();
-  c.moveTo(12,0); c.lineTo(16,-6); c.moveTo(12,0); c.lineTo(16,6);
+  c.moveTo(10,0); c.lineTo(16,-6); c.moveTo(10,0); c.lineTo(16,6);
   c.stroke();
 
   // Fish bones (symmetrical)
-  for(let x=-9;x<=9;x+=4){
+  for(let x=-8;x<=9;x+=5){
     c.beginPath();
-    c.moveTo(x,0); c.lineTo(x,-4);
-    c.moveTo(x,0); c.lineTo(x,4);
+    c.moveTo(x,0); c.lineTo(x,-5);
+    c.moveTo(x,0); c.lineTo(x,5);
     c.stroke();
   }
   c.restore();
