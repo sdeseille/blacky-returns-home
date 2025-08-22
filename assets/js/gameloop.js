@@ -1,4 +1,4 @@
-let { init, TileEngine, Sprite, GameLoop, initKeys, keyPressed } = kontra;
+let { init, TileEngine, Sprite, GameLoop, initKeys, keyPressed, clamp } = kontra;
 
 let // ZzFXMicro - Zuper Zmall Zound Zynth - v1.3.1 by Frank Force ~ 1000 bytes
 zzfxV=.3,               // volume
@@ -56,14 +56,13 @@ const GROUND_Y = Math.floor(canvas.height * 0.7); // same pos everywhere
 const DETECT_R = 110;   // Radius to detect player (IA switch to chase mode)
 const ATTACK_R = 46;    // attack radius (crouch -> dash)
 const FOOT_PAD = 4;
-
+// All related to tileset
+const TW = 36, TH = 36, MAPW = 25, MAPH = 10;
 
 // ------------ functions toolbox ------------
-function clamp(v, a, b){ return v < a ? a : v > b ? b : v; }
 function dist(a,b){ let dx=a.x-b.x, dy=a.y-b.y; return Math.hypot(dx,dy); }
 
 // --- virtual Tileset : grey square 36x36 ---
-const TW = 36, TH = 36, MAPW = 25, MAPH = 10;
 function makeTile(color = '#999') {
   const img = document.createElement('canvas');
   img.width = TW; img.height = TH;
@@ -196,7 +195,6 @@ function renderCat(self){
     c.fillRect(10, -6 + tailOffset, 4, 14);
   }
   
-
   // Legs (no movement during sliding)
   let step = self.sliding ? 0 : Math.sin(self.t * 3) * 2;
   c.fillRect(-8,  12 + step, 4, 6);
@@ -315,7 +313,7 @@ function createCat(opts){
           collideWithTiles(this);
 
           // duplicate the function call to not go out of area
-          this.x = clamp(this.x, 32, canvas.width - 4);
+          this.x = clamp(16, canvas.width - 4,this.x);
           return;
         }
 
@@ -348,7 +346,7 @@ function createCat(opts){
       }
 
       // Border
-      this.x = clamp(this.x, 32, canvas.width - 4);
+      this.x = clamp(16, canvas.width - 4, this.x);
     },
     render: function(){
       // If AI is in “crouch” mode, draw a ball — otherwise draw a normal cat.
