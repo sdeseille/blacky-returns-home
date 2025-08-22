@@ -153,6 +153,46 @@ function collideWithTiles(e) {
   }
 }
 
+// Cat likes fish
+
+function renderFishSkeleton(c){
+  c.save();
+  c.strokeStyle="#ccc"; c.lineWidth=2;
+
+  // Spine
+  c.beginPath();
+  c.moveTo(-12,0); c.lineTo(12,0); c.stroke();
+
+  // fish head (triangle)
+  c.beginPath();
+  c.moveTo(-16,0); c.lineTo(-12,-6); c.lineTo(-12,6); c.closePath();
+  c.stroke();
+
+  // Fish tail (V)
+  c.beginPath();
+  c.moveTo(12,0); c.lineTo(16,-6); c.moveTo(12,0); c.lineTo(16,6);
+  c.stroke();
+
+  // Fish bones (symmetrical)
+  for(let x=-9;x<=9;x+=4){
+    c.beginPath();
+    c.moveTo(x,0); c.lineTo(x,-4);
+    c.moveTo(x,0); c.lineTo(x,4);
+    c.stroke();
+  }
+  c.restore();
+}
+
+function createFishSkeleton(opts={}){
+  return kontra.Sprite({
+    x: opts.x||100,
+    y: opts.y||100,
+    width: 32,
+    height: 32,
+    render(){ renderFishSkeleton(this.context); }
+  });
+}
+
 // --- utility to find Y of the shadow ---
 function getShadowY(e, tileEngine) {
   let startY = e.y + e.height / 2;        // bottom of the sprite
@@ -370,6 +410,8 @@ let cats = [
   createCat({ x: 140, y: GROUND_Y, speed: 1.0, vx:  0.4, ai: true })
 ];
 
+let fish = createFishSkeleton();
+
 // --- Manage collision between player and AI ---
 function collidePlayerCats(player, cats) {
   cats.forEach(cat => {
@@ -402,6 +444,7 @@ let loop = GameLoop({  // create the main game loop
     // sprites
     player.render();
     for (let i=0;i<cats.length;i++) cats[i].render();
+    fish.render()
   }
 });
 
