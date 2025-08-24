@@ -82,7 +82,7 @@ for (let c = 0; c < MAPW; c++) data[(MAPH - 1) * MAPW + c] = 1;
 for (let c = 11; c <= 15; c++) data[5 * MAPW + c] = 1;
 
 // floating plateform (line 7, columns 6..9)
-for (let c = 6; c <= MAPW; c++) data[7 * MAPW + c] = 1;
+for (let c = 6; c <= MAPW-3; c++) data[7 * MAPW + c] = 1;
 
 // floating plateform (line 7, columns 6..9)
 for (let c = 6; c <= 11; c++) data[3 * MAPW + c] = 1;
