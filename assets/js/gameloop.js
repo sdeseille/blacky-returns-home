@@ -57,7 +57,7 @@ const DETECT_R = 110;   // Radius to detect player (IA switch to chase mode)
 const ATTACK_R = 46;    // attack radius (crouch -> dash)
 const FOOT_PAD = 4;
 // All related to tileset
-const TW = 36, TH = 36, MAPW = 25, MAPH = 10;
+const TW = 36, TH = 36, MAPW = 50, MAPH = 10;
 
 // ------------ functions toolbox ------------
 function dist(a,b){ let dx=a.x-b.x, dy=a.y-b.y; return Math.hypot(dx,dy); }
@@ -82,7 +82,7 @@ for (let c = 0; c < MAPW; c++) data[(MAPH - 1) * MAPW + c] = 1;
 for (let c = 11; c <= 15; c++) data[5 * MAPW + c] = 1;
 
 // floating plateform (line 7, columns 6..9)
-for (let c = 6; c <= 11; c++) data[7 * MAPW + c] = 1;
+for (let c = 6; c <= MAPW; c++) data[7 * MAPW + c] = 1;
 
 // floating plateform (line 7, columns 6..9)
 for (let c = 6; c <= 11; c++) data[3 * MAPW + c] = 1;
@@ -356,7 +356,7 @@ function createCat(opts){
           collideWithTiles(this);
 
           // duplicate the function call to not go out of area
-          this.x = clamp(16 + tileEngine.sx, tileEngine.sx + canvas.width - 4,this.x);
+          this.x = clamp(16 + tileEngine.sx, tileEngine.sx + canvas.width-8,this.x);
           return;
         }
 
@@ -389,7 +389,7 @@ function createCat(opts){
       }
 
       // Border
-      this.x = clamp(16 + tileEngine.sx, tileEngine.sx + canvas.width - 4, this.x);
+      this.x = clamp(16, tileEngine.sx + canvas.width-8, this.x);
     },
     render: function(){
       // If AI is in “crouch” mode, draw a ball — otherwise draw a normal cat.
@@ -443,16 +443,10 @@ function collidePlayerCats(player, cats) {
 // --- Main Loop ---
 let loop = GameLoop({  // create the main game loop
   update: function() { // update the game state
-    
-/*     if (tileEngine.sx <= 0 || tileEngine.sx >= 180) {
-      sx = -sx;
-    } */
     player.update();
-    if (player.x >= canvas.width / 2){
-      tileEngine.sx += sx;
-    }
     for (let i=0;i<cats.length;i++) cats[i].update();
     collidePlayerCats(player,cats);
+    tileEngine.sx = player.x + player.width/2 - canvas.width/2;
   },
   render: function() { // render the game state
     tileEngine.render();
