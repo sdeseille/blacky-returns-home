@@ -82,7 +82,10 @@ for (let c = 0; c < MAPW; c++) data[(MAPH - 1) * MAPW + c] = 1;
 for (let c = 11; c <= 15; c++) data[5 * MAPW + c] = 1;
 
 // floating plateform (line 7, columns 6..9)
-for (let c = 6; c <= 9; c++) data[7 * MAPW + c] = 1;
+for (let c = 6; c <= 11; c++) data[7 * MAPW + c] = 1;
+
+// floating plateform (line 7, columns 6..9)
+for (let c = 6; c <= 11; c++) data[3 * MAPW + c] = 1;
 
 // --- TileEngine Création (require image !) ---
 const tileEngine = TileEngine({
@@ -353,7 +356,7 @@ function createCat(opts){
           collideWithTiles(this);
 
           // duplicate the function call to not go out of area
-          this.x = clamp(16, canvas.width - 4,this.x);
+          this.x = clamp(16 + tileEngine.sx, tileEngine.sx + canvas.width - 4,this.x);
           return;
         }
 
@@ -386,7 +389,7 @@ function createCat(opts){
       }
 
       // Border
-      this.x = clamp(16, canvas.width - 4, this.x);
+      this.x = clamp(16 + tileEngine.sx, tileEngine.sx + canvas.width - 4, this.x);
     },
     render: function(){
       // If AI is in “crouch” mode, draw a ball — otherwise draw a normal cat.
@@ -412,6 +415,11 @@ let cats = [
 
 let fish = createFishSkeleton();
 
+
+// sync the tile map camera and the sprite
+tileEngine.add(player,cats,fish);
+let sx = 1;
+
 // --- Manage collision between player and AI ---
 function collidePlayerCats(player, cats) {
   cats.forEach(cat => {
@@ -435,16 +443,23 @@ function collidePlayerCats(player, cats) {
 // --- Main Loop ---
 let loop = GameLoop({  // create the main game loop
   update: function() { // update the game state
+    
+/*     if (tileEngine.sx <= 0 || tileEngine.sx >= 180) {
+      sx = -sx;
+    } */
     player.update();
+    if (player.x >= canvas.width / 2){
+      tileEngine.sx += sx;
+    }
     for (let i=0;i<cats.length;i++) cats[i].update();
     collidePlayerCats(player,cats);
   },
   render: function() { // render the game state
     tileEngine.render();
     // sprites
-    player.render();
-    for (let i=0;i<cats.length;i++) cats[i].render();
-    fish.render()
+    //player.render();
+    //for (let i=0;i<cats.length;i++) cats[i].render();
+    //fish.render()
   }
 });
 
