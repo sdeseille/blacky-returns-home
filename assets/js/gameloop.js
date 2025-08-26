@@ -1,4 +1,4 @@
-let { init, TileEngine, Sprite, GameLoop, initKeys, keyPressed, clamp } = kontra;
+let { init, TileEngine, Sprite, GameLoop, initKeys, keyPressed, clamp, collides } = kontra;
 
 let // ZzFXMicro - Zuper Zmall Zound Zynth - v1.3.1 by Frank Force ~ 1000 bytes
 zzfxV=.3,               // volume
@@ -57,7 +57,7 @@ const DETECT_R = 110;   // Radius to detect player (IA switch to chase mode)
 const ATTACK_R = 46;    // attack radius (crouch -> dash)
 const FOOT_PAD = 4;
 // All related to tileset
-const TW = 36, TH = 36, MAPW = 50, MAPH = 10;
+const TW = 36, TH = 36, MAPW = 20, MAPH = 10;
 
 // ------------ functions toolbox ------------
 function dist(a,b){ let dx=a.x-b.x, dy=a.y-b.y; return Math.hypot(dx,dy); }
@@ -75,17 +75,34 @@ const tileImage = makeTile('#9aa'); // init tile image
 
 // --- data of the map : 0 = empty, 1 = filled ---
 const data = new Array(MAPW * MAPH).fill(0);
+const levels = [
+                  [
+                    [],
+                    [3,2,7,1,10,1,13,1],
+                    [16,4],
+                    [0,2],
+                    [],
+                    [2,3,11,5],
+                    [],
+                    [5,5],
+                    [],
+                    [] // ground (last line created outside of level data)
+                  ]
+                ];
 // ground (last line)
 for (let c = 0; c < MAPW; c++) data[(MAPH - 1) * MAPW + c] = 1;
 
-// floating platform (line 5, columns 11..15)
-for (let c = 11; c <= 15; c++) data[5 * MAPW + c] = 1;
-
-// floating plateform (line 7, columns 6..9)
-for (let c = 6; c <= MAPW-3; c++) data[7 * MAPW + c] = 1;
-
-// floating plateform (line 7, columns 6..9)
-for (let c = 6; c <= 11; c++) data[3 * MAPW + c] = 1;
+// level constructor
+for (let l = 0; l < levels[0].length; l++){
+  const row=levels[0][l]
+  for (let i = 0; i <row.length;i+=2){
+    const col = row[i], span = row[i+1];
+    for (let j=0;j<span;j++){
+      const idx = l * MAPW + (col + j);
+      data[idx] = 1;
+    }
+  }
+}
 
 // --- TileEngine Création (require image !) ---
 const tileEngine = TileEngine({
@@ -446,6 +463,9 @@ let loop = GameLoop({  // create the main game loop
     player.update();
     for (let i=0;i<cats.length;i++) cats[i].update();
     collidePlayerCats(player,cats);
+    if (collides(player, fish)){
+      playSound("dash");
+    }
     tileEngine.sx = player.x + player.width/2 - canvas.width/2;
   },
   render: function() { // render the game state
