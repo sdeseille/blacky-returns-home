@@ -33,7 +33,7 @@ function playSound(type){
       zzfx(...[,,60,.2,.3,.4,2]);
       break;
     case "pickup":
-      zzfx(...[,,553,.02,.03,.05,,1.9,2,62,208,.06,,,,,,.94]);
+      zzfx(...[1.5,,539,,,.06,,.8,,,,,,.1,,,,.65]);
       break;
     case "catStep1":
       // a light, soft step
@@ -212,6 +212,82 @@ function createFishSkeleton(opts={}){
     render(){ renderFishSkeleton(this.context); }
   });
 }
+
+function createSlidingWindow(opts) {
+  opts = opts || {};
+  let w = opts.w || 48, h = opts.h || 64;
+
+  let s = kontra.Sprite({
+    x: opts.x || 100,
+    y: opts.y || 80,
+    width: w,
+    height: h,
+    anchor: {x:0.5, y:0.5},
+
+    open: 0,         // current state (0 close→ 1 open)
+    targetOpen: 0,   // targeted state
+    speed: 0.05,     // motion speed
+    timer: 0,
+
+    frameColor: opts.frame || "hsla(36, 90%, 31%, 1.00)",
+    glassColor: opts.glass || "rgba(180, 220, 255, 0.81)",
+
+    // API
+    openWindow() { this.targetOpen = 1;this.timer = 120;},
+    closeWindow() { this.targetOpen = 0; },
+    toggleWindow() { this.targetOpen = this.targetOpen > 0.5 ? 0 : 1; },
+
+    update() {
+      if (this.open < this.targetOpen) {
+        this.open = Math.min(this.open + this.speed, this.targetOpen);
+      } else if (this.open > this.targetOpen) {
+        this.open = Math.max(this.open - this.speed, this.targetOpen);
+      }
+
+      // countdown autoclose
+      if(this.timer>0){
+        this.timer--;
+        if(this.timer===0) this.closeWindow();
+      }
+    },
+
+    render() {
+      const c = this.context;
+      const hw = this.width / 2, hh = this.height / 2;
+
+      // frame
+      c.fillStyle = this.frameColor;
+      c.fillRect(-hw, -hh, this.width, this.height);
+
+      // Glass area
+      let innerMargin = 4;
+      let glassW = this.width - innerMargin * 2;
+      let glassH = this.height - innerMargin * 2;
+      let glassX = -hw + innerMargin;
+      let glassY = -hh + innerMargin;
+
+      // Glass Background
+      c.fillStyle = this.glassColor;
+      c.fillRect(glassX, glassY, glassW, glassH);
+
+      // sash (the part that lifts up when opening)
+      let sashH = glassH / 2;
+      let closedY = glassY + glassH - sashH;
+      let openY = glassY; 
+      let lowerY = closedY - (closedY - openY) * this.open;
+
+      c.fillStyle = this.glassColor;
+      c.fillRect(glassX, lowerY, glassW, sashH);
+
+      // small separator bar
+      c.fillStyle = this.frameColor;
+      c.fillRect(glassX, closedY, glassW, 2);
+    }
+  });
+
+  return s;
+}
+
 
 // --- utility to find Y of the shadow ---
 function getShadowY(e, tileEngine) {
@@ -425,16 +501,17 @@ function createCat(opts){
 let player = createCat({ x: 60, y: GROUND_Y, speed: 2.2, ai: false });
 
 let cats = [
-  createCat({ x: 210, y: GROUND_Y, speed: 1.2, vx:  0.8, ai: true, furColor: 'white', eyeColor: 'blue' }),
-  createCat({ x: 180, y: GROUND_Y, speed: 1.6, vx: -1.2, ai: true, furColor: 'orange', eyeColor: 'green' }),
-  createCat({ x: 140, y: GROUND_Y, speed: 1.0, vx:  0.4, ai: true })
+  createCat({ x: 320, y: 200, speed: 1.2, vx:  0.8, ai: true, furColor: 'white', eyeColor: 'blue' }),
+  createCat({ x: 460, y: 100, speed: 1.6, vx: -1.2, ai: true, furColor: 'silver', eyeColor: 'green' }),
+  createCat({ x: 500, y: GROUND_Y, speed: 1.0, vx:  0.4, ai: true })
 ];
 
 let fish = createFishSkeleton();
 
+let exit_window = createSlidingWindow({x: 684,y: 56, w:40, h:48});
 
 // sync the tile map camera and the sprite
-tileEngine.add(player,cats,fish);
+tileEngine.add(exit_window,player,cats,fish);
 let sx = 1;
 
 // --- Manage collision between player and AI ---
@@ -462,10 +539,16 @@ let loop = GameLoop({  // create the main game loop
   update: function() { // update the game state
     player.update();
     for (let i=0;i<cats.length;i++) cats[i].update();
+    exit_window.update();
     collidePlayerCats(player,cats);
-    if (collides(player, fish)){
-      playSound("dash");
+    if (fish && collides(player, fish)){
+      playSound("pickup");
+      tileEngine.remove(fish);
+      fish.ttl = 0;
+      fish = null;
+      exit_window.openWindow();      
     }
+
     tileEngine.sx = player.x + player.width/2 - canvas.width/2;
   },
   render: function() { // render the game state
