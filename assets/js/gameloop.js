@@ -1,4 +1,4 @@
-let { init, TileEngine, Sprite, GameLoop, initKeys, keyPressed, clamp, collides } = kontra;
+let { init, TileEngine, Sprite, GameLoop, initKeys, initPointer, keyPressed, onKey, Text, Grid, track, clamp, collides } = kontra;
 
 let // ZzFXMicro - Zuper Zmall Zound Zynth - v1.3.1 by Frank Force ~ 1000 bytes
 zzfxV=.3,               // volume
@@ -48,6 +48,7 @@ function playSound(type){
 }
 
 const { canvas } = init();
+initPointer();
 initKeys();
 
 // ------------ CONSTANT ------------
@@ -103,6 +104,233 @@ for (let l = 0; l < levels[0].length; l++){
     }
   }
 }
+
+let game_state = 'menu';
+let player_score = 0;
+let player_name = '';
+let is_name_entered = false;
+bold_font = 'bold 20px Arial, sans-serif';
+normal_font = '20px Arial, sans-serif';
+
+let text_options = {
+  color: 'white',
+  font: normal_font
+};
+
+onKey('r', function(e) {
+  // return to the game menu
+  console.log("r key pressed ! ");
+  game_state = 'menu';
+});
+
+function get_highscores() {
+  // Retrieve scores from localStorage or return an empty array if not present
+  return JSON.parse(localStorage.getItem('blacky_returns_home_highscores')) || [];
+}
+
+function save_highscore(new_score, player_name) {
+  let highscores = get_highscores();
+  const new_highscore = { score: new_score, name: player_name };
+
+  // Add new score and sort the array in descending order
+  highscores.push(new_highscore);
+  highscores.sort((a, b) => b.score - a.score);
+
+  // Limit the array to top MAX_HIGH_SCORES scores
+  highscores.splice(MAX_HIGH_SCORES);
+
+  // Save back to localStorage
+  localStorage.setItem('blacky_returns_home_highscores', JSON.stringify(highscores));
+}
+
+function generate_score_table(highscores) {
+  let text_objects = [];
+  let start_y = 160; // Starting Y position for the first row
+  let row_height = 40; // Space between each row
+  let last_y_pos = start_y; // Used by text message proposing to restart a game
+
+  // Column x positions for rank, name, and score
+  const nameX = canvas.width/2;
+  const rankX = nameX-100;
+  const scoreX = nameX+100;
+
+  // Header row
+  text_objects.push(Text({
+    text: 'Rank',
+    font: '20px Arial',
+    color: 'white',
+    x: rankX,
+    y: start_y - 40,
+    anchor: {x: 0.5, y: 0.5},
+    textAlign: 'center'
+  }));
+  text_objects.push(Text({
+    text: 'Name',
+    font: '20px Arial',
+    color: 'white',
+    x: nameX,
+    y: start_y - 40,
+    anchor: {x: 0.5, y: 0.5},
+    textAlign: 'center'
+  }));
+  text_objects.push(Text({
+    text: 'Score',
+    font: '20px Arial',
+    color: 'white',
+    x: scoreX,
+    y: start_y - 40,
+    anchor: {x: 0.5, y: 0.5},
+    textAlign: 'center'
+  }));
+
+  // Loop through high scores and create Text objects for each entry
+  highscores.forEach((entry, index) => {
+    let y_pos = start_y + (index * row_height);
+    last_y_pos = y_pos;
+
+    text_objects.push(Text({
+      text: `${index + 1}`.padStart(3,'0'),  // Rank
+      font: '20px Arial',
+      color: 'white',
+      x: rankX,
+      y: y_pos,
+      anchor: {x: 0.5, y: 0.5},
+      textAlign: 'center'
+    }));
+
+    text_objects.push(Text({
+      text: entry.name,  // Player Name
+      font: '20px Arial',
+      color: 'white',
+      x: nameX,
+      y: y_pos,
+      anchor: {x: 0.5, y: 0.5},
+      textAlign: 'center'
+    }));
+
+    text_objects.push(Text({
+      text: entry.score.toString().padStart(3,'0'),  // Player Score
+      font: '20px Arial',
+      color: 'white',
+      x: scoreX,
+      y: y_pos,
+      anchor: {x: 0.5, y: 0.5},
+      textAlign: 'center'
+    }));
+  });
+
+  // Add a message to restart a game
+  text_objects.push(Text({
+    text: 'Press [r] to restart',
+    font: 'bold 16px Arial',
+    color: 'white',
+    x: canvas.width/2,
+    y: last_y_pos + (row_height * 1.5),
+    anchor: {x: 0.5, y: 0.5},
+    textAlign: 'center'
+  }));
+
+  return text_objects;
+}
+
+function new_banner(msg, colorname) {
+  return Text({
+    text: msg,
+    font: '54px Arial',
+    color: colorname,
+    x: canvas.width/2,
+    y: 75,
+    anchor: {x: 0.5, y: 0.5},
+    textAlign: 'center'
+  });
+}
+
+let game_title = new_banner('🎭 Blacky returns home 🎭', 'yellow');
+let highscores_title = new_banner('🏆 -= Highscore =- 🏆', 'gold');
+
+let game_over = Text({
+  text: 'Game Over\n\nYour score: ' + player_score,
+  font: 'italic 58px Arial',
+  color: 'red',
+  x: canvas.width/2,
+  y: 100,
+  anchor: {x: 0.5, y: 0.5},
+  textAlign: 'center',
+  update: function () {
+    this.text = 'Game Over\nYour score: ' + player_score
+  }
+});
+
+let game_won = Text({
+  text: '🎉Congratulation🎉\n\nYour score: ' + player_score,
+  font: 'italic 58px Arial',
+  color: 'blue',
+  x: canvas.width/2,
+  y: 100,
+  anchor: {x: 0.5, y: 0.5},
+  textAlign: 'center',
+  update: function () {
+    this.text = '🎉Congratulation🎉\nYour score: ' + player_score
+  }
+});
+
+let start_again = Text({
+  text: 'Press [r] to restart',
+  font: 'bold 16px Arial',
+  color: 'white',
+  x: canvas.width/2,
+  y: 225,
+  anchor: {x: 0.5, y: 0.5},
+  textAlign: 'center'
+});
+
+let start = Text({
+  text: 'Start',
+  onDown: function() {
+    // handle on down events on the sprite
+    console.log("Clicked on Start");
+    game_state = 'play';
+    game_points_multiplier = 0;
+  },
+  onOver: function() {
+    this.font = bold_font;
+  },
+  onOut: function() {
+    this.font = normal_font;
+  },
+  ...text_options
+});
+
+let highscore = Text({
+  text: 'Highscore',
+  onDown: function() {
+    // handle on down events on the sprite
+    console.log("Clicked on High Score");
+    game_state = 'highscores';
+  },
+  onOver: function() {
+    this.font = bold_font;
+  },
+  onOut: function() {
+    this.font = normal_font;
+  },
+  ...text_options
+});
+
+let start_menu = Grid({
+  x: canvas.width/2,
+  y: 250,
+  anchor: {x: 0.5, y: 0.5},
+
+  // add 15 pixels of space between each row
+  rowGap: 15,
+
+  // center the children
+  justify: 'center',
+
+  children: [start, highscore]
+});
+track(start,highscore);
 
 // --- TileEngine Création (require image !) ---
 const tileEngine = TileEngine({
@@ -535,24 +763,75 @@ function collidePlayerCats(player, cats) {
 }
 
 // --- Main Loop ---
+let scoreTable = [];
 let loop = GameLoop({  // create the main game loop
   update: function() { // update the game state
-    player.update();
-    for (let i=0;i<cats.length;i++) cats[i].update();
-    exit_window.update();
-    collidePlayerCats(player,cats);
-    if (fish && collides(player, fish)){
-      playSound("pickup");
-      tileEngine.remove(fish);
-      fish.ttl = 0;
-      fish = null;
-      exit_window.openWindow();      
+    let highscores = [];
+    switch (game_state) {
+      case 'menu':
+        break;
+      case 'play':
+        player.update();
+        for (let i=0;i<cats.length;i++) cats[i].update();
+        exit_window.update();
+        collidePlayerCats(player,cats);
+        if (fish && collides(player, fish)){
+          playSound("pickup");
+          tileEngine.remove(fish);
+          fish.ttl = 0;
+          fish = null;
+          exit_window.openWindow();      
+        }
+        tileEngine.sx = player.x + player.width/2 - canvas.width/2;
+        break;
+      case 'gameover':
+        game_over.update();
+        // Check if player made a high score
+        highscores = get_highscores();
+        break;
+      case 'gamewon':
+        game_won.update();
+        // Check if player made a high score
+        highscores = get_highscores();
+        if (player_score > highscores[highscores.length - 1]?.score || highscores.length < MAX_HIGH_SCORES) {
+          // Player has a high score, ask for their name
+          let player_name = prompt('New High Score! Enter your nickname:');
+          console.log('player_name: ['+player_name+']');
+          let trimmed_player_name = player_name.substring(0, 3);
+          console.log('trimmed_player_name: ['+trimmed_player_name+']');
+          save_highscore(player_score, trimmed_player_name);
+        }
+        scoreTable = generate_score_table(get_highscores());
+        game_state = 'highscores';
+        break;
+      case 'highscores':
+        scoreTable = generate_score_table(get_highscores());
+        break;
     }
-
-    tileEngine.sx = player.x + player.width/2 - canvas.width/2;
   },
   render: function() { // render the game state
-    tileEngine.render();
+    switch (game_state) {
+      case 'menu':
+        game_title.render();
+        start_menu.render();
+        break;
+      case 'play':
+        tileEngine.render();
+        break;
+      case 'gameover':
+        game_over.render();
+        start_again.render();
+        break;
+      case 'gamewon':
+        game_won.render();
+        start_again.render();
+        break;
+      case 'highscores':
+        highscores_title.render()
+        // Render the high score table
+        scoreTable.forEach(row => row.render());
+        break;
+    }
     // sprites
     //player.render();
     //for (let i=0;i<cats.length;i++) cats[i].render();
