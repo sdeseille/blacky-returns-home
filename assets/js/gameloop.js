@@ -60,6 +60,11 @@ const FOOT_PAD = 4;
 // All related to tileset
 const TW = 36, TH = 36, MAPW = 20, MAPH = 10;
 
+// ------------ Global ------------
+
+let tileEngine, player, cats = [], fish, exit_window;
+let MAX_HIGH_SCORES = 5;
+
 // ------------ functions toolbox ------------
 function dist(a,b){ let dx=a.x-b.x, dy=a.y-b.y; return Math.hypot(dx,dy); }
 
@@ -121,6 +126,7 @@ onKey('r', function(e) {
   // return to the game menu
   console.log("r key pressed ! ");
   game_state = 'menu';
+  initGame();
 });
 
 function get_highscores() {
@@ -332,20 +338,7 @@ let start_menu = Grid({
 });
 track(start,highscore);
 
-// --- TileEngine Création (require image !) ---
-const tileEngine = TileEngine({
-  tilewidth: TW,
-  tileheight: TH,
-  width: MAPW,
-  height: MAPH,
-  tilesets: [{ firstgid: 1, image: tileImage, columns: 1 }],
-  layers: [{
-    name: 'solid',
-    data // CSV flatten (1D array)
-  }]
-});
-
-// --- Collisions detection with tiles---
+// --- Collision detection with tiles---
 function isSolidAt(x, y) {
   return tileEngine.tileAtLayer('solid', { x, y }) > 0; // 0 = vide
 }
@@ -726,21 +719,38 @@ function createCat(opts){
   return s;
 }
 
-let player = createCat({ x: 60, y: GROUND_Y, speed: 2.2, ai: false });
+function initGame() {
+  // --- TileEngine Création (require image !) ---
+  tileEngine = TileEngine({
+    tilewidth: TW,
+    tileheight: TH,
+    width: MAPW,
+    height: MAPH,
+    tilesets: [{ firstgid: 1, image: tileImage, columns: 1 }],
+    layers: [{
+      name: 'solid',
+      data // CSV flatten (1D array)
+    }]
+  });
 
-let cats = [
-  createCat({ x: 320, y: 200, speed: 1.2, vx:  0.8, ai: true, furColor: 'white', eyeColor: 'blue' }),
-  createCat({ x: 460, y: 100, speed: 1.6, vx: -1.2, ai: true, furColor: 'silver', eyeColor: 'green' }),
-  createCat({ x: 500, y: GROUND_Y, speed: 1.0, vx:  0.4, ai: true })
-];
+  player = createCat({ x: 60, y: GROUND_Y, speed: 2.2, ai: false });
 
-let fish = createFishSkeleton();
+  cats = [
+    createCat({ x: 320, y: 200, speed: 1.2, vx:  0.8, ai: true, furColor: 'white', eyeColor: 'blue' }),
+    createCat({ x: 460, y: 100, speed: 1.6, vx: -1.2, ai: true, furColor: 'silver', eyeColor: 'green' }),
+    createCat({ x: 500, y: GROUND_Y, speed: 1.0, vx:  0.4, ai: true })
+  ];
 
-let exit_window = createSlidingWindow({x: 684,y: 56, w:40, h:48});
+  fish = createFishSkeleton();
 
-// sync the tile map camera and the sprite
-tileEngine.add(exit_window,player,cats,fish);
-let sx = 1;
+  exit_window = createSlidingWindow({x: 684,y: 56, w:40, h:48});
+
+  // sync the tile map camera and the sprite
+  tileEngine.add(exit_window,player,cats,fish);
+}
+
+// Initialization of the game
+initGame();
 
 // --- Manage collision between player and AI ---
 function collidePlayerCats(player, cats) {
@@ -781,6 +791,10 @@ let loop = GameLoop({  // create the main game loop
           fish.ttl = 0;
           fish = null;
           exit_window.openWindow();      
+        }
+        if (exit_window && collides(player, exit_window)){
+          playSound("pickup");
+          game_state='gamewon';      
         }
         tileEngine.sx = player.x + player.width/2 - canvas.width/2;
         break;
@@ -832,10 +846,6 @@ let loop = GameLoop({  // create the main game loop
         scoreTable.forEach(row => row.render());
         break;
     }
-    // sprites
-    //player.render();
-    //for (let i=0;i<cats.length;i++) cats[i].render();
-    //fish.render()
   }
 });
 
