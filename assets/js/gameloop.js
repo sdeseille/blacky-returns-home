@@ -57,6 +57,14 @@ const GROUND_Y = Math.floor(canvas.height * 0.7); // same pos everywhere
 const DETECT_R = 110;   // Radius to detect player (IA switch to chase mode)
 const ATTACK_R = 46;    // attack radius (crouch -> dash)
 const FOOT_PAD = 4;
+const bold_font = 'bold 20px Arial, sans-serif';
+const normal_font = '20px Arial, sans-serif';
+
+const text_options = {
+  color: 'white',
+  font: normal_font
+};
+
 // All related to tileset
 const TW = 36, TH = 36, MAPW = 20, MAPH = 10;
 
@@ -68,13 +76,7 @@ let game_state = 'menu';
 let player_score = 0;
 let player_name = '';
 let is_name_entered = false;
-bold_font = 'bold 20px Arial, sans-serif';
-normal_font = '20px Arial, sans-serif';
 
-let text_options = {
-  color: 'white',
-  font: normal_font
-};
 
 
 // ------------ functions toolbox ------------
@@ -720,6 +722,11 @@ function createCat(opts){
 }
 
 function initGame() {
+  // -- reinit variable used for game score
+  player_score = 0;
+  player_name = '';
+  is_name_entered = false;
+
   // --- TileEngine Création (require image !) ---
   tileEngine = TileEngine({
     tilewidth: TW,
