@@ -765,6 +765,7 @@ function collidePlayerCats(player, cats) {
   
         // cooldown to avoid infinite rebound
         player.reboundCooldown = 20;
+        player_score -= 10;
         playSound("rebound");
         console.log("Rebound trigered !");
       }
@@ -786,6 +787,7 @@ let loop = GameLoop({  // create the main game loop
         exit_window.update();
         collidePlayerCats(player,cats);
         if (fish && collides(player, fish)){
+          player_score += 100;
           playSound("pickup");
           tileEngine.remove(fish);
           fish.ttl = 0;
@@ -793,6 +795,7 @@ let loop = GameLoop({  // create the main game loop
           exit_window.openWindow();      
         }
         if (exit_window && collides(player, exit_window)){
+          player_score += 500;
           playSound("pickup");
           game_state='gamewon';      
         }
