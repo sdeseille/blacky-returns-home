@@ -72,6 +72,7 @@ const TW = 36, TH = 36, MAPW = 20, MAPH = 10;
 
 let tileEngine, player, cats = [], fish, exit_window;
 let MAX_HIGH_SCORES = 5;
+let game_level = 1;
 let game_state = 'menu';
 let player_score = 0;
 let player_name = '';
@@ -107,14 +108,26 @@ const levels = [
                     [5,5],
                     [],
                     [] // ground (last line created outside of level data)
+                  ],
+                  [
+                    [],
+                    [15,3],
+                    [1,4,8,1,11,2,19,1],
+                    [],
+                    [0,1,6,1,9,1,12,1,17,2],
+                    [],
+                    [2,2,13,4],
+                    [],
+                    [4,1],
+                    [] // ground (last line created outside of level data)
                   ]
                 ];
 // ground (last line)
 for (let c = 0; c < MAPW; c++) data[(MAPH - 1) * MAPW + c] = 1;
 
 // level constructor
-for (let l = 0; l < levels[0].length; l++){
-  const row=levels[0][l]
+for (let l = 0; l < levels[game_level].length; l++){
+  const row=levels[game_level][l]
   for (let i = 0; i <row.length;i+=2){
     const col = row[i], span = row[i+1];
     for (let j=0;j<span;j++){
@@ -722,6 +735,7 @@ function createCat(opts){
 }
 
 function initGame() {
+  game_level = 1;
   // -- reinit variable used for game score
   player_score = 0;
   player_name = '';
