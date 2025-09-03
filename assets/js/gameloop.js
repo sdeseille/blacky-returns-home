@@ -64,6 +64,18 @@ const TW = 36, TH = 36, MAPW = 20, MAPH = 10;
 
 let tileEngine, player, cats = [], fish, exit_window;
 let MAX_HIGH_SCORES = 5;
+let game_state = 'menu';
+let player_score = 0;
+let player_name = '';
+let is_name_entered = false;
+bold_font = 'bold 20px Arial, sans-serif';
+normal_font = '20px Arial, sans-serif';
+
+let text_options = {
+  color: 'white',
+  font: normal_font
+};
+
 
 // ------------ functions toolbox ------------
 function dist(a,b){ let dx=a.x-b.x, dy=a.y-b.y; return Math.hypot(dx,dy); }
@@ -109,18 +121,6 @@ for (let l = 0; l < levels[0].length; l++){
     }
   }
 }
-
-let game_state = 'menu';
-let player_score = 0;
-let player_name = '';
-let is_name_entered = false;
-bold_font = 'bold 20px Arial, sans-serif';
-normal_font = '20px Arial, sans-serif';
-
-let text_options = {
-  color: 'white',
-  font: normal_font
-};
 
 onKey('r', function(e) {
   // return to the game menu
