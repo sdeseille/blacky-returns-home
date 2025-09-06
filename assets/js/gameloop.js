@@ -67,35 +67,6 @@ const text_options = {
 
 // All related to tileset
 const TW = 36, TH = 36, MAPW = 20, MAPH = 10;
-
-// ------------ Global ------------
-
-let tileEngine, player, cats = [], fish, exit_window;
-let MAX_HIGH_SCORES = 5;
-let game_level = 1;
-let game_state = 'menu';
-let player_score = 0;
-let player_name = '';
-let is_name_entered = false;
-
-
-
-// ------------ functions toolbox ------------
-function dist(a,b){ let dx=a.x-b.x, dy=a.y-b.y; return Math.hypot(dx,dy); }
-
-// --- virtual Tileset : grey square 36x36 ---
-function makeTile(color = '#999') {
-  const img = document.createElement('canvas');
-  img.width = TW; img.height = TH;
-  const ctx = img.getContext('2d');
-  ctx.fillStyle = color; ctx.fillRect(0, 0, TW, TH);
-  ctx.strokeStyle = '#777'; ctx.strokeRect(0, 0, TW, TH);
-  return img;
-}
-const tileImage = makeTile('#9aa'); // init tile image
-
-// --- data of the map : 0 = empty, 1 = filled ---
-const data = new Array(MAPW * MAPH).fill(0);
 const levels = [
                   [
                     [],
@@ -122,26 +93,47 @@ const levels = [
                     [] // ground (last line created outside of level data)
                   ]
                 ];
-// ground (last line)
-for (let c = 0; c < MAPW; c++) data[(MAPH - 1) * MAPW + c] = 1;
 
-// level constructor
-for (let l = 0; l < levels[game_level].length; l++){
-  const row=levels[game_level][l]
-  for (let i = 0; i <row.length;i+=2){
-    const col = row[i], span = row[i+1];
-    for (let j=0;j<span;j++){
-      const idx = l * MAPW + (col + j);
-      data[idx] = 1;
-    }
-  }
+// ------------ Global ------------
+
+// --- data of the map : 0 = empty, 1 = filled ---
+let data = new Array(MAPW * MAPH).fill(0);
+
+let tileEngine, player, cats = [], fish, exit_window;
+let MAX_HIGH_SCORES = 5;
+let game_level = 1;
+let game_state = 'menu';
+let player_score = 0;
+let player_name = '';
+let is_name_entered = false;
+let current_level = 1;
+let number_of_levels = levels.length;
+
+
+// ------------ functions toolbox ------------
+function dist(a,b){ let dx=a.x-b.x, dy=a.y-b.y; return Math.hypot(dx,dy); }
+
+// --- virtual Tileset : grey square 36x36 ---
+function makeTile(color = '#999') {
+  const img = document.createElement('canvas');
+  img.width = TW; img.height = TH;
+  const ctx = img.getContext('2d');
+  ctx.fillStyle = color; ctx.fillRect(0, 0, TW, TH);
+  ctx.strokeStyle = '#777'; ctx.strokeRect(0, 0, TW, TH);
+  return img;
+}
+const tileImage = makeTile('#9aa'); // init tile image
+
+
+function is_last_level(level){
+  return level == number_of_levels ? true : false;
 }
 
 onKey('r', function(e) {
   // return to the game menu
   console.log("r key pressed ! ");
   game_state = 'menu';
-  initGame();
+  initGame('restart',current_level);
 });
 
 function get_highscores() {
@@ -734,12 +726,31 @@ function createCat(opts){
   return s;
 }
 
-function initGame() {
-  game_level = 1;
-  // -- reinit variable used for game score
-  player_score = 0;
-  player_name = '';
-  is_name_entered = false;
+function initGame(reason,level) {
+  if (reason == 'restart'){
+    // -- reinit variable used for game score
+    player_score = 0;
+    player_name = '';
+    is_name_entered = false;
+  }
+  
+  game_level = level;
+  data = new Array(MAPW * MAPH).fill(0);
+
+  // ground (last line)
+  for (let c = 0; c < MAPW; c++) data[(MAPH - 1) * MAPW + c] = 1;
+
+  // level constructor
+  for (let l = 0; l < levels[game_level-1].length; l++){
+    const row=levels[game_level-1][l]
+    for (let i = 0; i <row.length;i+=2){
+      const col = row[i], span = row[i+1];
+      for (let j=0;j<span;j++){
+        const idx = l * MAPW + (col + j);
+        data[idx] = 1;
+      }
+    }
+  }
 
   // --- TileEngine Création (require image !) ---
   tileEngine = TileEngine({
@@ -771,7 +782,7 @@ function initGame() {
 }
 
 // Initialization of the game
-initGame();
+initGame('start',current_level);
 
 // --- Manage collision between player and AI ---
 function collidePlayerCats(player, cats) {
@@ -818,7 +829,13 @@ let loop = GameLoop({  // create the main game loop
         if (exit_window && collides(player, exit_window)){
           player_score += 500;
           playSound("pickup");
-          game_state='gamewon';      
+          if (is_last_level(current_level)){
+            current_level=1;
+            game_state='gamewon';
+          } else {
+            current_level+=1;
+            initGame('nextlevel',current_level);
+          } 
         }
         tileEngine.sx = player.x + player.width/2 - canvas.width/2;
         break;
