@@ -93,7 +93,10 @@ const levels = [
                     [] // ground (last line created outside of level data)
                   ]
                 ];
-
+const levelObjects = [
+                        [['f',3,2],['w',1,19]],
+                        [['f',1,19],['w',3,9]]
+                      ];
 // ------------ Global ------------
 
 // --- data of the map : 0 = empty, 1 = filled ---
@@ -123,7 +126,6 @@ function makeTile(color = '#999') {
   return img;
 }
 const tileImage = makeTile('#9aa'); // init tile image
-
 
 function is_last_level(level){
   return level == number_of_levels ? true : false;
@@ -277,7 +279,7 @@ let game_over = Text({
 let game_won = Text({
   text: '🎉Congratulation🎉\n\nYour score: ' + player_score,
   font: 'italic 58px Arial',
-  color: 'blue',
+  color: 'white',
   x: canvas.width/2,
   y: 100,
   anchor: {x: 0.5, y: 0.5},
@@ -443,14 +445,14 @@ function createFishSkeleton(opts={}){
 
 function createSlidingWindow(opts) {
   opts = opts || {};
-  let w = opts.w || 48, h = opts.h || 64;
+  let w = opts.w || 48, h = opts.h || 48;
 
   let s = kontra.Sprite({
     x: opts.x || 100,
     y: opts.y || 80,
     width: w,
     height: h,
-    anchor: {x:0.5, y:0.5},
+    anchor: {x:0, y:0.25},
 
     open: 0,         // current state (0 close→ 1 open)
     targetOpen: 0,   // targeted state
@@ -515,7 +517,6 @@ function createSlidingWindow(opts) {
 
   return s;
 }
-
 
 // --- utility to find Y of the shadow ---
 function getShadowY(e, tileEngine) {
@@ -726,6 +727,36 @@ function createCat(opts){
   return s;
 }
 
+// helper to convert col/row → centered pixel coordinates
+function tileToXY(col, row, tileEngine) {
+  let tw = tileEngine.tilewidth;
+  let th = tileEngine.tileheight;
+  return {
+    x: col * tw + tw/2,
+    y: row * th + th/2
+  };
+}
+
+function parseLevelObjects(levelIndex, levelObjects, tileEngine) {
+  let objects = [];
+
+  let list = levelObjects[levelIndex-1];
+  for (let i=0; i<list.length; i++) {
+    let [type, row, col] = list[i];
+    let {x,y} = tileToXY(col, row, tileEngine);
+
+    if (type === 'f') {
+      fish = createFishSkeleton({'x':x,'y':y});
+      objects.push(fish);
+    }
+    else if (type === 'w') {
+      exit_window = createSlidingWindow({'x':x,'y':y, 'w': 36});
+      objects.push(exit_window);
+    }
+  }
+  return objects;
+}
+
 function initGame(reason,level) {
   if (reason == 'restart'){
     // -- reinit variable used for game score
@@ -752,7 +783,7 @@ function initGame(reason,level) {
     }
   }
 
-  // --- TileEngine Création (require image !) ---
+  // --- TileEngine Creation (require image !) ---
   tileEngine = TileEngine({
     tilewidth: TW,
     tileheight: TH,
@@ -773,12 +804,8 @@ function initGame(reason,level) {
     createCat({ x: 500, y: GROUND_Y, speed: 1.0, vx:  0.4, ai: true })
   ];
 
-  fish = createFishSkeleton();
-
-  exit_window = createSlidingWindow({x: 684,y: 56, w:40, h:48});
-
-  // sync the tile map camera and the sprite
-  tileEngine.add(exit_window,player,cats,fish);
+  let objects = parseLevelObjects(game_level, levelObjects, tileEngine)
+  tileEngine.add(player,cats,objects);
 }
 
 // Initialization of the game
@@ -848,7 +875,7 @@ let loop = GameLoop({  // create the main game loop
         game_won.update();
         // Check if player made a high score
         highscores = get_highscores();
-        if (player_score > highscores[highscores.length - 1]?.score || highscores.length < MAX_HIGH_SCORES) {
+        if (player_score > highscores[- 1]?.score || highscores.length < MAX_HIGH_SCORES) {
           // Player has a high score, ask for their name
           let player_name = prompt('New High Score! Enter your nickname:');
           console.log('player_name: ['+player_name+']');
@@ -856,8 +883,6 @@ let loop = GameLoop({  // create the main game loop
           console.log('trimmed_player_name: ['+trimmed_player_name+']');
           save_highscore(player_score, trimmed_player_name);
         }
-        scoreTable = generate_score_table(get_highscores());
-        game_state = 'highscores';
         break;
       case 'highscores':
         scoreTable = generate_score_table(get_highscores());
