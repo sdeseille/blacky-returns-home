@@ -168,35 +168,20 @@ function generate_score_table(highscores) {
   const nameX = canvas.width/2;
   const rankX = nameX-100;
   const scoreX = nameX+100;
+  const ColPos = {'Rank': rankX,'Name': nameX,'Score': scoreX};
 
   // Header row
-  text_objects.push(Text({
-    text: 'Rank',
-    font: '20px Arial',
-    color: 'white',
-    x: rankX,
-    y: start_y - 40,
-    anchor: {x: 0.5, y: 0.5},
-    textAlign: 'center'
-  }));
-  text_objects.push(Text({
-    text: 'Name',
-    font: '20px Arial',
-    color: 'white',
-    x: nameX,
-    y: start_y - 40,
-    anchor: {x: 0.5, y: 0.5},
-    textAlign: 'center'
-  }));
-  text_objects.push(Text({
-    text: 'Score',
-    font: '20px Arial',
-    color: 'white',
-    x: scoreX,
-    y: start_y - 40,
-    anchor: {x: 0.5, y: 0.5},
-    textAlign: 'center'
-  }));
+  ['Rank','Name','Score'].forEach((name) => {
+    text_objects.push(Text({
+      text: name,
+      font: '20px Arial',
+      color: 'white',
+      x: ColPos[name],
+      y: start_y - 40,
+      anchor: {x: 0.5, y: 0.5},
+      textAlign: 'center'
+    }))
+  });
 
   // Loop through high scores and create Text objects for each entry
   highscores.forEach((entry, index) => {
@@ -305,7 +290,6 @@ let start = Text({
     // handle on down events on the sprite
     console.log("Clicked on Start");
     game_state = 'play';
-    game_points_multiplier = 0;
   },
   onOver: function() {
     this.font = bold_font;
