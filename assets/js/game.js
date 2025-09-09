@@ -866,6 +866,8 @@ let loop = GameLoop({  // create the main game loop
           let trimmed_player_name = player_name.substring(0, 3);
           console.log('trimmed_player_name: ['+trimmed_player_name+']');
           save_highscore(player_score, trimmed_player_name);
+          highscores = get_highscores();
+          game_state='menu';
         }
         break;
       case 'highscores':
