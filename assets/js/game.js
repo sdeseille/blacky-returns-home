@@ -91,11 +91,24 @@ const levels = [
                     [],
                     [4,1],
                     [] // ground (last line created outside of level data)
+                  ],
+                  [
+                    [5,1],
+                    [0,4,5,1,10,2],
+                    [5,3,14,1],
+                    [3,3],
+                    [10,1,12,1],
+                    [8,1,10,1,12,1],
+                    [0,4,6,1,8,1,10,1],
+                    [5,2,8,1],
+                    [6,1],
+                    [] // ground (last line created outside of level data)
                   ]
                 ];
 const levelObjects = [
-                        [['f',3,2],['w',1,19]],
-                        [['f',1,19],['w',3,9]]
+                        [['p',8,1],['f',3,2],['w',1,19]],
+                        [['p',8,1],['f',1,19],['w',3,9]],
+                        [['p',0,1],['f',8,1],['w',1,6]]
                       ];
 // ------------ Global ------------
 
@@ -737,6 +750,10 @@ function parseLevelObjects(levelIndex, levelObjects, tileEngine) {
       exit_window = createSlidingWindow({'x':x,'y':y, 'w': 36});
       objects.push(exit_window);
     }
+    else if (type === 'p') {
+      player = createCat({ x: x, y: y, speed: 2.2, ai: false });
+      objects.push(player)
+    }
   }
   return objects;
 }
@@ -780,8 +797,6 @@ function initGame(reason,level) {
     }]
   });
 
-  player = createCat({ x: 60, y: GROUND_Y, speed: 2.2, ai: false });
-
   cats = [
     createCat({ x: 320, y: 200, speed: 1.2, vx:  0.8, ai: true, furColor: 'white', eyeColor: 'blue' }),
     createCat({ x: 460, y: 100, speed: 1.6, vx: -1.2, ai: true, furColor: 'silver', eyeColor: 'green' }),
@@ -789,7 +804,7 @@ function initGame(reason,level) {
   ];
 
   let objects = parseLevelObjects(game_level, levelObjects, tileEngine)
-  tileEngine.add(player,cats,objects);
+  tileEngine.add(cats,objects);
 }
 
 // Initialization of the game
@@ -862,9 +877,9 @@ let loop = GameLoop({  // create the main game loop
         if (player_score > highscores[- 1]?.score || highscores.length < MAX_HIGH_SCORES) {
           // Player has a high score, ask for their name
           let player_name = prompt('New High Score! Enter your nickname:');
-          console.log('player_name: ['+player_name+']');
+          //console.log('player_name: ['+player_name+']');
           let trimmed_player_name = player_name.substring(0, 3);
-          console.log('trimmed_player_name: ['+trimmed_player_name+']');
+          //console.log('trimmed_player_name: ['+trimmed_player_name+']');
           save_highscore(player_score, trimmed_player_name);
           highscores = get_highscores();
           game_state='menu';
