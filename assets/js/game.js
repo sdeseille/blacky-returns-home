@@ -26,12 +26,6 @@ function playSound(type){
     case "rebound":
       zzfx(...[2.1,,358,.02,.01,.17,4,3.6,,,,,,.6,15,.4,.17,.75,.06]);
       break;
-    case "dash":
-      zzfx(...[,,400,.05,.15,.2,,2]);
-      break;
-    case "squash":
-      zzfx(...[,,60,.2,.3,.4,2]);
-      break;
     case "pickup":
       zzfx(...[1.5,,539,,,.06,,.8,,,,,,.1,,,,.65]);
       break;
@@ -95,12 +89,12 @@ const levels = [
                   [
                     [5,1],
                     [0,4,5,1,10,2],
-                    [5,3,14,1],
-                    [3,3],
+                    [5,3,14,1,16,1],
+                    [3,3,19,1],
                     [10,1,12,1],
-                    [8,1,10,1,12,1],
+                    [8,1,10,1,12,1,17,1],
                     [0,4,6,1,8,1,10,1],
-                    [5,2,8,1],
+                    [5,2,8,1,14,2],
                     [6,1],
                     [] // ground (last line created outside of level data)
                   ]
@@ -108,7 +102,7 @@ const levels = [
 const levelObjects = [
                         [['p',8,1],['f',3,2],['w',1,19]],
                         [['p',8,1],['f',1,19],['w',3,9]],
-                        [['p',0,1],['f',8,1],['w',1,6]]
+                        [['p',0,1],['f',8,1],['f',0,19],['w',1,6]]
                       ];
 // ------------ Global ------------
 
@@ -681,16 +675,10 @@ function createCat(opts){
 
         let l = keyPressed('arrowleft'),
             r = keyPressed('arrowright'),
-            up = keyPressed('space') || keyPressed('arrowup'),
-            dash = keyPressed('shift');
+            up = keyPressed('space') || keyPressed('arrowup');
 
         this.vx = (l ? -this.speed : 0) + (r ? this.speed : 0);
         if (wasOnGround && up){ this.vy = JUMP; playSound("jump"); this.onGround = false; }
-        if (wasOnGround && dash && !this.sliding){ this.sliding = 18; }
-        if (this.sliding){
-          this.vx += (this.facing = (this.vx>=0?1:-1)) * 3.5;
-          this.sliding--;
-        }
       }
       // input
       collideWithTiles(this);
