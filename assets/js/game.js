@@ -139,7 +139,7 @@ function is_last_level(level){
 
 onKey('r', function(e) {
   // return to the game menu
-  console.log("r key pressed ! ");
+  //console.log("r key pressed ! ");
   game_state = 'menu';
   initGame('restart',current_level);
 });
@@ -290,11 +290,25 @@ let start_again = Text({
   textAlign: 'center'
 });
 
+let live_score = Text({
+  text: 'SCORE: ' + player_score.toString().padStart(4,'0'),
+  font: 'bold 20px Arial',
+  color: 'white',
+  strokeColor: 'black',
+  x: 640,
+  y: 345,
+  anchor: {x: 0.5, y: 0.5},
+  textAlign: 'right',
+  update: function () {
+    this.text = 'SCORE: ' + player_score.toString().padStart(4,'0')
+  }
+});
+
 let start = Text({
   text: 'Start',
   onDown: function() {
     // handle on down events on the sprite
-    console.log("Clicked on Start");
+    //console.log("Clicked on Start");
     game_state = 'play';
   },
   onOver: function() {
@@ -310,7 +324,7 @@ let highscore = Text({
   text: 'Highscore',
   onDown: function() {
     // handle on down events on the sprite
-    console.log("Clicked on High Score");
+    //console.log("Clicked on High Score");
     game_state = 'highscores';
   },
   onOver: function() {
@@ -790,7 +804,7 @@ function initGame(reason,level) {
   ];
   fishes = []
   let objects = parseLevelObjects(game_level, levelObjects, tileEngine, fishes)
-  tileEngine.add(cats,objects,fishes);
+  tileEngine.add(cats,objects,fishes,live_score);
 }
 
 // Initialization of the game
@@ -811,7 +825,7 @@ function collidePlayerCats(player, cats) {
         player.reboundCooldown = 20;
         player_score -= 50;
         playSound("rebound");
-        console.log("Rebound trigered !");
+        //console.log("Rebound trigered !");
       }
     }
   });
@@ -854,6 +868,7 @@ let loop = GameLoop({  // create the main game loop
             initGame('nextlevel',current_level);
           } 
         }
+        live_score.update()
         tileEngine.sx = player.x + player.width/2 - canvas.width/2;
         break;
       case 'gameover':
