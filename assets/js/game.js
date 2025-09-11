@@ -37,7 +37,6 @@ function playSound(type){
       // a more subdued variant, slightly higher in pitch
       zzfx(...[,,160,.01,.015,.02,1,1.2,,.6]); 
       break;
-
   }
 }
 
@@ -109,7 +108,7 @@ const levelObjects = [
 // --- data of the map : 0 = empty, 1 = filled ---
 let data = new Array(MAPW * MAPH).fill(0);
 
-let tileEngine, player, cats = [], fish, exit_window;
+let tileEngine, player, cats = [], fishes = [], exit_window;
 let MAX_HIGH_SCORES = 5;
 let game_level = 1;
 let game_state = 'menu';
@@ -346,7 +345,6 @@ function isSolidAt(x, y) {
 function collideWithTiles(e) {
   // 1) Vertical integration with vy
   e.y += e.vy;
-
   const halfW = e.width / 2, halfH = e.height / 2;
 
   if (e.vy >= 0) {
@@ -398,7 +396,7 @@ function collideWithTiles(e) {
 
 function renderFishSkeleton(c){
   c.save();
-  c.strokeStyle="#ccc"; c.lineWidth=2;
+  c.strokeStyle="#faf600ff"; c.lineWidth=2;
 
   // Spine
   c.beginPath();
@@ -450,8 +448,8 @@ function createSlidingWindow(opts) {
     speed: 0.05,     // motion speed
     timer: 0,
 
-    frameColor: opts.frame || "hsla(36, 90%, 31%, 1.00)",
-    glassColor: opts.glass || "rgba(180, 220, 255, 0.81)",
+    frameColor: opts.frame || "#965d08ff",
+    glassColor: opts.glass || "#b4dcffcf",
 
     // API
     openWindow() { this.targetOpen = 1;this.timer = 120;},
@@ -574,7 +572,7 @@ function renderCat(self){
     let shadowY = getShadowY(self, tileEngine);
     if (shadowY !== null) {
 
-      c.fillStyle = 'rgba(0, 0, 0, 0.3)';
+      c.fillStyle = '#0000004d';
       c.fillRect(-8, (shadowY - self.y), 16, 3,);
     }
   }
@@ -722,7 +720,7 @@ function tileToXY(col, row, tileEngine) {
   };
 }
 
-function parseLevelObjects(levelIndex, levelObjects, tileEngine) {
+function parseLevelObjects(levelIndex, levelObjects, tileEngine, fishes) {
   let objects = [];
 
   let list = levelObjects[levelIndex-1];
@@ -731,8 +729,8 @@ function parseLevelObjects(levelIndex, levelObjects, tileEngine) {
     let {x,y} = tileToXY(col, row, tileEngine);
 
     if (type === 'f') {
-      fish = createFishSkeleton({'x':x,'y':y});
-      objects.push(fish);
+      let fish = createFishSkeleton({'x':x,'y':y});
+      fishes.push(fish);
     }
     else if (type === 'w') {
       exit_window = createSlidingWindow({'x':x,'y':y, 'w': 36});
@@ -790,9 +788,9 @@ function initGame(reason,level) {
     createCat({ x: 460, y: 100, speed: 1.6, vx: -1.2, ai: true, furColor: 'silver', eyeColor: 'green' }),
     createCat({ x: 500, y: GROUND_Y, speed: 1.0, vx:  0.4, ai: true })
   ];
-
-  let objects = parseLevelObjects(game_level, levelObjects, tileEngine)
-  tileEngine.add(cats,objects);
+  fishes = []
+  let objects = parseLevelObjects(game_level, levelObjects, tileEngine, fishes)
+  tileEngine.add(cats,objects,fishes);
 }
 
 // Initialization of the game
@@ -811,7 +809,7 @@ function collidePlayerCats(player, cats) {
   
         // cooldown to avoid infinite rebound
         player.reboundCooldown = 20;
-        player_score -= 10;
+        player_score -= 50;
         playSound("rebound");
         console.log("Rebound trigered !");
       }
@@ -832,13 +830,18 @@ let loop = GameLoop({  // create the main game loop
         for (let i=0;i<cats.length;i++) cats[i].update();
         exit_window.update();
         collidePlayerCats(player,cats);
-        if (fish && collides(player, fish)){
-          player_score += 100;
-          playSound("pickup");
-          tileEngine.remove(fish);
-          fish.ttl = 0;
-          fish = null;
-          exit_window.openWindow();      
+        for (let i = fishes.length - 1; i >= 0; i--) {
+          let fish = fishes[i];
+          if (fish && collides(player, fish)) {
+            player_score += 100;
+            playSound("pickup");
+
+            fish.ttl = 0;             // il disparaîtra aussi du rendu si tu utilises kontra
+            tileEngine.remove(fish);  // supprime du tileEngine
+            fishes.splice(i, 1);      // supprime du tableau
+
+            exit_window.openWindow();      
+          }
         }
         if (exit_window && collides(player, exit_window)){
           player_score += 500;
