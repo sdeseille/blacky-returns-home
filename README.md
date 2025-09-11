@@ -4,15 +4,20 @@
 
 ## Description
 
-In Blacky returns home, you have to help the little black cat to returns home and get his lunch. Outside is full of danger and enemies.
+In Blacky Returns Home, you must help the little black cat get back home and retrieve his lunch. 
+
+But first, you must help Blacky retrieve his little toy: a fish bone. Are you agile enough? 
+Once you have found the toy, guide Blacky to the window of his house.
+
+Be careful of the other cats, they are jealous of Blacky and will try to catch him.
 
 ## How to Play
 
-1. TODO
+1. Use the keyboard arrows to move the little cat and space bar or up to jump.
 
 ## Difficulty Levels
 
-* TODO, not sure I will be able to propose that feature
+* Only one level of difficulty.
 
 Track your progress and compete for the top spot on the highscore board !
 
