@@ -81,7 +81,7 @@ const levels = [
                     [0,1,6,1,9,1,12,1,17,2],
                     [],
                     [2,2,13,4],
-                    [],
+                    [9,1],
                     [4,1],
                     [] // ground (last line created outside of level data)
                   ],
@@ -96,12 +96,25 @@ const levels = [
                     [5,2,8,1,14,2],
                     [6,1],
                     [] // ground (last line created outside of level data)
+                  ],
+                  [
+                    [],
+                    [2,1,5,2,10,1],
+                    [0,1,13,2,16,1,19,1],
+                    [6,2,11,1],
+                    [3,1,9,1,18,2],
+                    [0,2,4,1,9,1,12,1,15,1],
+                    [8,3,14,1],
+                    [2,1,5,2,9,1,16,1],
+                    [0,1,4,1,16,1],
+                    [] // ground (last line created outside of level data)
                   ]
                 ];
 const levelObjects = [
                         [['p',8,1],['f',3,2],['w',1,19]],
-                        [['p',8,1],['f',1,19],['w',3,9]],
-                        [['p',0,1],['f',8,1],['f',0,19],['w',1,6]]
+                        [['p',8,1],['f',1,19],['f',8,10],['w',3,9]],
+                        [['p',0,1],['f',8,1],['f',0,19],['w',1,6]],
+                        [['p',8,18],['f',8,2],['f',1,19],['f',3,9],['w',1,0]]
                       ];
 // ------------ Global ------------
 
@@ -339,15 +352,15 @@ let live_score = Text({
 });
 
 let screen_title = Text({
-  text: 'Blacky return Home',
+  text: '😺 Blacky return Home',
   font: 'bold 32px Comic Sans MS',
   color: 'Black',
-  x: 32,
+  x: 16,
   y: 345,
   anchor: {x: 0, y: 0.5},
   textAlign: 'Left',
   update: function () {
-    this.text = 'Blacky return Home'
+    this.text = '😺 Blacky return Home'
   }
 });
 
@@ -934,7 +947,7 @@ let loop = GameLoop({  // create the main game loop
         game_won.update();
         // Check if player made a high score
         highscores = get_highscores();
-        if (player_score > highscores[- 1]?.score || highscores.length < MAX_HIGH_SCORES) {
+        if (highscores.length < MAX_HIGH_SCORES || player_score > highscores[highscores.length - 1].score) {
           // Player has a high score, ask for their name
           let player_name = prompt('New High Score! Enter your nickname:');
           //console.log('player_name: ['+player_name+']');
