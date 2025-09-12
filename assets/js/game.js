@@ -285,7 +285,7 @@ function new_banner(msg, colorname) {
   });
 }
 
-let game_title = new_banner('🎭 Blacky returns home 🎭', 'yellow');
+let game_title = new_banner('😺 Blacky returns home 😺', 'black');
 let highscores_title = new_banner('🏆 -= Highscore =- 🏆', 'gold');
 
 let game_over = Text({
@@ -335,6 +335,19 @@ let live_score = Text({
   textAlign: 'right',
   update: function () {
     this.text = 'SCORE: ' + player_score.toString().padStart(4,'0')
+  }
+});
+
+let screen_title = Text({
+  text: 'Blacky return Home',
+  font: 'bold 32px Comic Sans MS',
+  color: 'Black',
+  x: 32,
+  y: 345,
+  anchor: {x: 0, y: 0.5},
+  textAlign: 'Left',
+  update: function () {
+    this.text = 'Blacky return Home'
   }
 });
 
@@ -839,7 +852,7 @@ function initGame(reason,level) {
   ];
   fishes = []
   let objects = parseLevelObjects(game_level, levelObjects, tileEngine, fishes)
-  tileEngine.add(cats,objects,fishes,live_score);
+  tileEngine.add(cats,objects,fishes,live_score,screen_title);
 }
 
 // Initialization of the game
@@ -908,6 +921,7 @@ let loop = GameLoop({  // create the main game loop
             initGame('nextlevel',current_level);
           } 
         }
+        screen_title.update
         live_score.update()
         tileEngine.sx = player.x + player.width/2 - canvas.width/2;
         break;
