@@ -102,19 +102,71 @@ const levels = [
                     [2,1,5,2,10,1],
                     [0,1,13,2,16,1,19,1],
                     [6,2,11,1],
-                    [3,1,9,1,18,2],
+                    [3,1,18,2],
                     [0,2,4,1,9,1,12,1,15,1],
                     [8,3,14,1],
                     [2,1,5,2,9,1,16,1],
                     [0,1,4,1,16,1],
                     [] // ground (last line created outside of level data)
+                  ],
+                  [
+                    [],
+                    [6,1,9,1,12,1,15,2],
+                    [0,4],
+                    [18,2],
+                    [],
+                    [4,5,15,3],
+                    [],
+                    [10,5],
+                    [],
+                    []
+                  ],
+                  [
+                    [],
+                    [2,3],
+                    [0,1,7,2,11,1,15,4],
+                    [],
+                    [1,2,7,1,10,1,13,1,19,1],
+                    [],
+                    [3,4,16,2],
+                    [10,1],
+                    [15,1],
+                    []
+                  ],
+                  [
+                    [14,1],
+                    [8,2,14,1,16,4],
+                    [3,1,5,1,12,3],
+                    [0,1,14,3],
+                    [7,1,9,1],
+                    [2,1,7,1,9,1,11,1],
+                    [9,1,11,1,13,1,16,4],
+                    [4,2,11,1,13,2],
+                    [13,1],
+                    []
+                  ],
+                  [
+                    [],
+                    [9,1,13,2,17,1],
+                    [0,1,3,1,5,2,19,1],
+                    [8,1,12,2],
+                    [0,2,16,1],
+                    [4,1,7,1,10,1,15,1,18,2],
+                    [5,1,9,3],
+                    [3,1,10,1,13,2,17,1],
+                    [3,1,15,1,19,1],
+                    []
                   ]
                 ];
 const levelObjects = [
                         [['p',8,1],['f',3,2],['w',1,19]],
                         [['p',8,1],['f',1,19],['f',8,10],['w',3,9]],
                         [['p',0,1],['f',8,1],['f',0,19],['w',1,6]],
-                        [['p',8,18],['f',8,2],['f',1,19],['f',3,9],['w',1,0]]
+                        [['p',8,18],['f',8,2],['f',1,19],['f',3,9],['w',1,0]],
+                        [['p',8,18],['f',3,17],['w',1,0]],
+                        [['p',8,18],['f',1,0],['f',8,9],['w',3,10]],
+                        [['p',0,18],['f',8,18],['f',0,0],['w',1,13]],
+                        [['p',8,1],['f',8,17],['f',1,0],['f',3,10],['w',1,19]]
                       ];
 // ------------ Global ------------
 
@@ -352,7 +404,7 @@ let live_score = Text({
 });
 
 let screen_title = Text({
-  text: '😺 Blacky return Home',
+  text: '😺 Blacky returns Home',
   font: 'bold 32px Comic Sans MS',
   color: 'Black',
   x: 16,
@@ -360,7 +412,7 @@ let screen_title = Text({
   anchor: {x: 0, y: 0.5},
   textAlign: 'Left',
   update: function () {
-    this.text = '😺 Blacky return Home'
+    this.text = '😺 Blacky returns Home'
   }
 });
 
@@ -923,7 +975,7 @@ let loop = GameLoop({  // create the main game loop
           let elapsed = chrono.getElapsed();
           let bonus = computeTimeBonus(elapsed);
           player_score += bonus;
-          console.log(`Niveau terminé en ${elapsed.toFixed(2)}s → Bonus : ${bonus} pts`);
+          //console.log(`Level accomplished in ${elapsed.toFixed(2)}s → Bonus : ${bonus} pts`);
           player_score += 500;
           playSound("pickup");
           if (is_last_level(current_level)){
