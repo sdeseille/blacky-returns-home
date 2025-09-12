@@ -11,6 +11,8 @@ Once you have found the toy, guide Blacky to the window of his house.
 
 Be careful of the other cats, they are jealous of Blacky and will try to catch him.
 
+You will be rewarder for your speed.
+
 ## How to Play
 
 1. Use the keyboard arrows to move the little cat and space bar or up to jump.
