@@ -118,9 +118,43 @@ let is_name_entered = false;
 let current_level = 1;
 let number_of_levels = levels.length;
 
-
 // ------------ functions toolbox ------------
 function dist(a,b){ let dx=a.x-b.x, dy=a.y-b.y; return Math.hypot(dx,dy); }
+
+function createChrono() {
+  let startTime = 0;
+  let endTime = 0;
+  let running = false;
+
+  return {
+    start() {
+      startTime = performance.now();
+      running = true;
+    },
+    stop() {
+      if (running) {
+        endTime = performance.now();
+        running = false;
+      }
+    },
+    reset() {
+      startTime = 0;
+      endTime = 0;
+      running = false;
+    },
+    getElapsed() {
+      let now = running ? performance.now() : endTime;
+      return (now - startTime) / 1000; // secondes
+    }
+  };
+}
+
+let chrono = createChrono();
+
+function computeTimeBonus(seconds) {
+  let t = Math.min(seconds, 60); // borne max 60s
+  return Math.max(0, Math.round(1000 * (60 - t) / 60));
+}
 
 // --- virtual Tileset : grey square 36x36 ---
 function makeTile(color = '#999') {
@@ -466,7 +500,7 @@ function createSlidingWindow(opts) {
     glassColor: opts.glass || "#b4dcffcf",
 
     // API
-    openWindow() { this.targetOpen = 1;this.timer = 120;},
+    openWindow() { this.targetOpen = 1;this.timer = 1800;},
     closeWindow() { this.targetOpen = 0; },
     toggleWindow() { this.targetOpen = this.targetOpen > 0.5 ? 0 : 1; },
 
@@ -760,12 +794,13 @@ function parseLevelObjects(levelIndex, levelObjects, tileEngine, fishes) {
 
 function initGame(reason,level) {
   if (reason == 'restart'){
+    chrono.reset();
     // -- reinit variable used for game score
     player_score = 0;
     player_name = '';
     is_name_entered = false;
   }
-  
+  chrono.start();
   game_level = level;
   data = new Array(MAPW * MAPH).fill(0);
 
@@ -847,7 +882,7 @@ let loop = GameLoop({  // create the main game loop
         for (let i = fishes.length - 1; i >= 0; i--) {
           let fish = fishes[i];
           if (fish && collides(player, fish)) {
-            player_score += 100;
+            player_score += 200;
             playSound("pickup");
 
             fish.ttl = 0;             // il disparaîtra aussi du rendu si tu utilises kontra
@@ -858,6 +893,11 @@ let loop = GameLoop({  // create the main game loop
           }
         }
         if (exit_window && collides(player, exit_window)){
+          chrono.stop();
+          let elapsed = chrono.getElapsed();
+          let bonus = computeTimeBonus(elapsed);
+          player_score += bonus;
+          console.log(`Niveau terminé en ${elapsed.toFixed(2)}s → Bonus : ${bonus} pts`);
           player_score += 500;
           playSound("pickup");
           if (is_last_level(current_level)){
